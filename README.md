@@ -18,6 +18,7 @@ This is a template repository for creating official Bonita connectors.
 | `.github/workflows/build.yml` | CI build on push (compile, test, publish snapshots) |
 | `.github/workflows/build-pr.yml` | CI build on pull requests |
 | `.github/workflows/claude-code-review.yml` | Automated code review via Claude Code on PRs |
+| `.github/workflows/claude.yml` | Interactive `@claude` mentions in issues, PRs, and reviews |
 | `.github/workflows/release.yml` | Release workflow with opt-in marketplace notification |
 | `.github/dependabot.yml` | Automated dependency updates |
 | `pom.xml` | Maven project configuration |
