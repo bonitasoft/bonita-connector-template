@@ -36,5 +36,7 @@ jobs:
             {
               "artifactId": "CHANGE_ME",
               "version": "${{ inputs.version }}",
-              "bonitaMinVersion": "CHANGE_ME"
+              "bonitaMinVersion": "CHANGE_ME",
+              "connectorName": "CHANGE_ME",
+              "iconUrl": "CHANGE_ME"
             }
