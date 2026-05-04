@@ -34,14 +34,19 @@
     </scm>
 
     <properties>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
         <bonita.runtime.version>10.2.0</bonita.runtime.version>
 
         <!-- Connector definition properties -->
         <connector.definition.id>${project.artifactId}</connector.definition.id>
         <connector.definition.version>1.0.0</connector.definition.version>
+
+        <!-- Build plugins -->
+        <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
+        <groovy-maven-plugin.version>2.1.1</groovy-maven-plugin.version>
+        <groovy.version>3.0.19</groovy.version>
     </properties>
 
     <dependencies>
@@ -51,6 +56,35 @@
             <version>${bonita.runtime.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!--
+            ==================================================================
+            MANDATORY: Declare the external system (SI) SDK / client library here.
+            Example (Slack):
+                <dependency>
+                    <groupId>com.slack.api</groupId>
+                    <artifactId>slack-api-client</artifactId>
+                    <version>${slack.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+
+            Rules:
+              - ALL runtime SDK dependencies MUST use scope "provided".
+              - "provided" keeps Bonita Studio's import analyzer happy
+                (compile/runtime deps trigger resolution failures on import).
+              - The groovy script at src/script/dependencies-as-var.groovy adds
+                provided-scope artifacts to <jarDependencies> in the .impl
+                so the Bonita runtime loads them at execution time.
+              - The assembly descriptor at src/assembly/connector-assembly.xml
+                bundles provided-scope JARs under classpath/ in the output ZIP.
+              - Never declare the SDK with scope "test" - it will not reach
+                runtime and you will get ClassNotFoundException in production.
+
+            Reference implementations:
+              - bonita-connector-slack-all (REST + provided scope)
+              - bonita-connector-rest (full-featured pattern)
+            ==================================================================
+        -->
 
         <!-- Test dependencies -->
         <dependency>
@@ -85,10 +119,39 @@
             </resource>
         </resources>
         <plugins>
+            <!--
+                Runs src/script/dependencies-as-var.groovy at generate-resources phase.
+                The script produces the ${connector-dependencies} Maven property
+                (an XML <jarDependencies> block) which is then substituted into
+                any .impl files placed under src/main/resources-filtered/.
+            -->
+            <plugin>
+                <groupId>org.codehaus.gmaven</groupId>
+                <artifactId>groovy-maven-plugin</artifactId>
+                <version>${groovy-maven-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>${groovy.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <source>${project.basedir}/src/script/dependencies-as-var.groovy</source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.1</version>
+                <version>${maven-assembly-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>package-connector</id>
@@ -100,6 +163,7 @@
                             <descriptors>
                                 <descriptor>src/assembly/connector-assembly.xml</descriptor>
                             </descriptors>
+                            <appendAssemblyId>true</appendAssemblyId>
                         </configuration>
                     </execution>
                 </executions>
